@@ -55,11 +55,8 @@ function crearEncabezados(sheet) {
    .setFontSize(10)
    .setHorizontalAlignment('center');
   sheet.setFrozenRows(1);
-  var anchos = [145, 110, 80, 85, 150, 150, 130, 85, 85, 90, 200, 120];
-  for (var i = 0; i < anchos.length; i++) sheet.setColumnWidth(i + 1, anchos[i]);
-  try {
-    sheet.getRange(1, 1, sheet.getMaxRows(), h.length).createFilter();
-  } catch(e) {}
+  var anchos = [145,110,80,85,150,150,130,85,85,90,200,120];
+  for (var i = 0; i < anchos.length; i++) sheet.setColumnWidth(i+1, anchos[i]);
 }
 
 function doGet(e) {
@@ -70,18 +67,12 @@ function doGet(e) {
 function inicializarPlanilla() {
   var ss    = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Registros');
-
   if (sheet) {
-    // Limpiar sin borrar la hoja
     sheet.clearContents();
     sheet.clearFormats();
-    sheet.clearNotes();
-    // Eliminar filtro si existe
-    try { if (sheet.getFilter()) sheet.getFilter().remove(); } catch(e) {}
   } else {
     sheet = ss.insertSheet('Registros');
   }
-
   crearEncabezados(sheet);
-  SpreadsheetApp.getUi().alert('Planilla reinicializada! 12 columnas limpias con filtros.');
+  SpreadsheetApp.getUi().alert('Listo!');
 }
