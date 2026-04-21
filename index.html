@@ -389,6 +389,22 @@ function parseResp(text) {
 
 // ── CARD ─────────────────────────────────────────────────────────────────────
 var cardCount = 0;
+
+function buildTipoCheckboxes(id, tipos, seleccionados) {
+  var html = '<div style="margin-bottom:6px;">';
+  html += '<div style="font-family:JetBrains Mono,monospace;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Tipo de evento:</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:5px;">';
+  for (var i = 0; i < tipos.length; i++) {
+    var t   = tipos[i];
+    var chk = seleccionados.indexOf(t) >= 0 ? ' checked' : '';
+    html += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:0.72rem;">';
+    html += '<input type="checkbox" id="tipo_' + id + '_' + i + '" value="' + t + '"' + chk + ' style="width:13px;height:13px;accent-color:var(--green2);" />';
+    html += '<span class="rtype t-' + t + '" style="margin:0;padding:1px 6px;">' + t + '</span>';
+    html += '</label>';
+  }
+  html += '</div></div>';
+  return html;
+}
 var POTREROS = ['Frente Samuel','Laguna Samuel','Salida Manga Samuel','Atras Manga Samuel','Fondo Samuel','Comedero Samuel','Piquete Samuel','Frente Ruiz','Costado Ruiz','Hugo Ruiz','Centro Ruiz','Fondo Ruiz'];
 var RODEOS  = ['Samuel','Ruiz'];
 var TIPOS_ANIMAL = ['Ternero','Terneros','Ternera','Terneras','Vaca','Vacas','Toro','Toros','Novillo','Novillos','Vaquillona','Vaquillonas'];
@@ -413,25 +429,7 @@ function buildCard(r) {
   // Tipo - checkboxes multiples
   var TIPOS_EVENTO = ['nacimiento','vacunacion','traspaso','muerte','venta','compra','peso','tacto','sangrado'];
   var tiposSeleccionados = (r.tipo || '').toLowerCase().split(',').map(function(t){ return t.trim(); });
-  var tipoBadge = '<div style="margin-bottom:6px;">'
-    + '<div style="font-family:JetBrains Mono,monospace;font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Tipo de evento:</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:5px;" id="tipos_' + id + '">';
-  for (var ti = 0; ti < TIPOS_EVENTO.length; ti++) {
-    var tev = TIPOS_EVENTO[ti];
-    var checked = tiposSeleccionados.indexOf(tev) >= 0;
-    var chkId = 'tipo_' + id + '_' + ti;
-    tipoBadge += '<label style="display:flex;align-items:center;gap:4px;cursor:pointer;'
-      + 'background:rgba(0,0,0,0.2);border:1px solid var(--border);border-radius:6px;'
-      + 'padding:3px 8px;font-size:0.72rem;transition:all 0.2s;" '
-      + 'onmouseover="this.style.borderColor='var(--green2)'" '
-      + 'onmouseout="this.style.borderColor='var(--border)'">'
-      + '<input type="checkbox" id="' + chkId + '" value="' + tev + '"'
-      + (checked ? ' checked' : '')
-      + ' style="width:13px;height:13px;accent-color:var(--green2);" />'
-      + '<span class="rtype t-' + tev + '" style="margin:0;padding:1px 6px;">' + tev + '</span>'
-      + '</label>';
-  }
-  tipoBadge += '</div></div>';
+  var tipoBadge = buildTipoCheckboxes(id, TIPOS_EVENTO, tiposSeleccionados);
 
   // Rodeo
   var rodeoHtml = '<div class="rfield-row">'
