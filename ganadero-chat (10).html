@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GanaderoBot</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:       #F7F5F0;
+  --white:    #FFFFFF;
+  --surface:  #F0EDE6;
+  --border:   #E5E0D8;
+  --green:    #2D6A4F;
+  --green-l:  #52B788;
+  --green-xl: #D8F3DC;
+  --amber:    #B5600F;
+  --amber-l:  #FFF0E0;
+  --red:      #C1121F;
+  --red-l:    #FFE8E8;
+  --blue:     #1D6FA4;
+  --blue-l:   #E8F4FD;
+  --text:     #1A1A1A;
+  --text2:    #5A5A5A;
+  --text3:    #9A9A9A;
+  --shadow:   0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+  --shadow-l: 0 2px 8px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08);
+  --radius:   16px;
+  --nav-h:    72px;
+}
+
+html, body { height:100%; overflow:hidden; background:var(--bg); }
+body { font-family:'DM Sans', sans-serif; color:var(--text); display:flex; flex-direction:column; }
+
+/* ── API KEY MODAL ── */
+#keyModal {
+  position:fixed; inset:0; background:rgba(0,0,0,0.4);
+  display:flex; align-items:flex-end; justify-content:center;
+  z-index:200; backdrop-filter:blur(4px);
+}
+.modal-sheet {
+  background:var(--white); width:100%; max-width:480px;
+  border-radius:24px 24px 0 0; padding:32px 24px 40px;
+  animation:slideUp 0.3s ease;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.modal-handle { width:40px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 24px; }
+.modal-icon { font-size:40px; text-align:center; margin-bottom:12px; }
+.modal-title { font-family:'DM Serif Display', serif; font-size:1.5rem; text-align:center; color:var(--text); margin-bottom:6px; }
+.modal-sub { font-size:0.85rem; color:var(--text2); text-align:center; margin-bottom:24px; line-height:1.5; }
+.modal-sub a { color:var(--green); text-decoration:none; font-weight:500; }
+.modal-input {
+  width:100%; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:12px; padding:14px 16px; font-family:'DM Sans',sans-serif;
+  font-size:0.9rem; color:var(--text); outline:none; margin-bottom:12px;
+  transition:border-color 0.2s;
+}
+.modal-input:focus { border-color:var(--green); }
+.modal-btn {
+  width:100%; background:var(--green); border:none; border-radius:12px;
+  padding:15px; font-family:'DM Sans',sans-serif; font-size:1rem;
+  font-weight:600; color:white; cursor:pointer; transition:all 0.2s;
+  letter-spacing:0.2px;
+}
+.modal-btn:active { background:#235A40; transform:scale(0.98); }
+
+/* ── APP SHELL ── */
+#app { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+/* ── TOP BAR ── */
+.topbar {
+  background:var(--white); border-bottom:1px solid var(--border);
+  padding:12px 20px; display:flex; align-items:center;
+  justify-content:space-between; flex-shrink:0;
+  box-shadow:0 1px 0 var(--border);
+}
+.topbar-brand { display:flex; align-items:center; gap:10px; }
+.topbar-icon {
+  width:36px; height:36px; background:var(--green); border-radius:10px;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.topbar-name { font-family:'DM Serif Display',serif; font-size:1.1rem; color:var(--text); }
+.topbar-status { font-size:0.72rem; color:var(--green-l); display:flex; align-items:center; gap:4px; margin-top:1px; }
+.status-dot { width:6px; height:6px; border-radius:50%; background:var(--green-l); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.topbar-right { display:flex; align-items:center; gap:8px; }
+.btn-sheet {
+  display:flex; align-items:center; gap:6px; background:var(--green-xl);
+  border:none; border-radius:20px; padding:7px 14px; font-family:'DM Sans',sans-serif;
+  font-size:0.78rem; font-weight:500; color:var(--green); cursor:pointer;
+  text-decoration:none; transition:all 0.2s;
+}
+.btn-sheet:active { background:#B7E4C7; }
+.btn-key {
+  width:34px; height:34px; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  font-size:16px; cursor:pointer; transition:all 0.2s;
+}
+.btn-key:active { background:var(--border); }
+
+/* ── STATS STRIP ── */
+.stats {
+  display:flex; background:var(--white); border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.stat {
+  flex:1; padding:10px 4px; text-align:center;
+  border-right:1px solid var(--border);
+}
+.stat:last-child { border-right:none; }
+.stat-n { font-family:'DM Serif Display',serif; font-size:1.2rem; color:var(--green); line-height:1; }
+.stat-l { font-size:0.6rem; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px; margin-top:2px; }
+
+/* ── SCREENS ── */
+.screens { flex:1; overflow:hidden; position:relative; }
+.screen { position:absolute; inset:0; overflow-y:auto; -webkit-overflow-scrolling:touch; display:none; }
+.screen.active { display:flex; flex-direction:column; }
+
+/* ── CHAT SCREEN ── */
+#chatScreen { padding-bottom:var(--nav-h); }
+.messages { flex:1; padding:16px; display:flex; flex-direction:column; gap:10px; }
+
+.msg { display:flex; flex-direction:column; max-width:84%; animation:msgIn 0.25s ease; }
+@keyframes msgIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.msg.u { align-self:flex-end; align-items:flex-end; }
+.msg.b { align-self:flex-start; align-items:flex-start; }
+
+.bubble {
+  padding:10px 14px; border-radius:18px; font-size:0.9rem;
+  line-height:1.5; word-break:break-word;
+}
+.msg.u .bubble {
+  background:var(--green); color:white; border-bottom-right-radius:4px;
+}
+.msg.b .bubble {
+  background:var(--white); color:var(--text); border-bottom-left-radius:4px;
+  box-shadow:var(--shadow);
+}
+.msg.b .bubble.ok  { border-left:3px solid var(--green-l); }
+.msg.b .bubble.err { background:var(--red-l); color:var(--red); border-left:3px solid var(--red); }
+.mtime { font-size:0.62rem; color:var(--text3); margin-top:3px; padding:0 4px; }
+
+/* ── RECORD CARD ── */
+.rcard {
+  margin-top:10px; background:var(--bg); border:1px solid var(--border);
+  border-radius:14px; padding:14px; font-size:0.85rem;
+}
+
+.tipos-grid {
+  display:flex; flex-wrap:wrap; gap:5px; margin-bottom:12px;
+}
+.tipo-chk-label {
+  display:flex; align-items:center; gap:5px; cursor:pointer;
+  background:var(--white); border:1.5px solid var(--border);
+  border-radius:8px; padding:5px 10px; font-size:0.75rem;
+  font-weight:500; transition:all 0.15s; user-select:none;
+}
+.tipo-chk-label input[type=checkbox] { display:none; }
+.tipo-chk-label.checked-nacimiento { background:var(--green-xl); border-color:var(--green-l); color:var(--green); }
+.tipo-chk-label.checked-vacunacion { background:#F3E8FF; border-color:#C084FC; color:#7E22CE; }
+.tipo-chk-label.checked-traspaso   { background:#FEF3C7; border-color:#F59E0B; color:#92400E; }
+.tipo-chk-label.checked-muerte     { background:var(--red-l); border-color:#FCA5A5; color:var(--red); }
+.tipo-chk-label.checked-venta      { background:#FFF7ED; border-color:#FB923C; color:#C2410C; }
+.tipo-chk-label.checked-compra     { background:#ECFEFF; border-color:#22D3EE; color:#0E7490; }
+.tipo-chk-label.checked-peso       { background:var(--blue-l); border-color:#7DD3FC; color:var(--blue); }
+.tipo-chk-label.checked-tacto      { background:#F0FDF4; border-color:#86EFAC; color:#166534; }
+.tipo-chk-label.checked-sangrado   { background:#FFF1F2; border-color:#FDA4AF; color:#9F1239; }
+
+.field-row {
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
+}
+.field-label {
+  font-size:0.72rem; font-weight:500; color:var(--text3);
+  text-transform:uppercase; letter-spacing:0.5px; width:70px; flex-shrink:0;
+}
+.field-select, .field-input {
+  flex:1; background:var(--white); border:1.5px solid var(--border);
+  border-radius:10px; padding:9px 12px; font-family:'DM Sans',sans-serif;
+  font-size:0.85rem; color:var(--text); outline:none; transition:border-color 0.2s;
+  -webkit-appearance:none;
+}
+.field-select:focus, .field-input:focus { border-color:var(--green); }
+.field-select {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%239A9A9A'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 10px center;
+  padding-right:28px; cursor:pointer;
+}
+.field-input-sm { width:100px; flex:none; }
+
+.vac-row { display:flex; align-items:center; gap:8px; flex:1; }
+.vac-chk-wrap {
+  display:flex; align-items:center; gap:5px; flex-shrink:0;
+  background:var(--green-xl); border:1.5px solid var(--green-l);
+  border-radius:8px; padding:5px 10px; cursor:pointer;
+}
+.vac-chk-wrap input { accent-color:var(--green); width:14px; height:14px; cursor:pointer; }
+.vac-chk-wrap span { font-size:0.75rem; font-weight:500; color:var(--green); }
+
+.card-divider { height:1px; background:var(--border); margin:10px 0; }
+
+.card-footer {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:8px; flex-wrap:wrap;
+}
+.date-wrap { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+.date-label { font-size:0.7rem; color:var(--text3); flex-shrink:0; }
+.date-input {
+  flex:1; background:transparent; border:none; font-family:'DM Sans',sans-serif;
+  font-size:0.8rem; color:var(--text2); outline:none; min-width:0;
+  border-bottom:1px dashed var(--border);
+}
+.btn-save {
+  background:var(--green); border:none; border-radius:10px; padding:9px 18px;
+  font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600;
+  color:white; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+}
+.btn-save:active { background:#235A40; transform:scale(0.97); }
+.btn-save.saved { background:var(--green-xl); color:var(--green); cursor:default; }
+.btn-link { font-size:0.75rem; color:var(--green); text-decoration:none; white-space:nowrap; }
+
+/* ── TYPING ── */
+.typing {
+  align-self:flex-start; background:var(--white); border-radius:18px;
+  border-bottom-left-radius:4px; padding:12px 16px; display:flex;
+  gap:4px; align-items:center; box-shadow:var(--shadow);
+}
+.td { width:7px; height:7px; border-radius:50%; background:var(--border); animation:td 1.2s infinite; }
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-6px);opacity:1}}
+
+/* ── QUICK CHIPS ── */
+.chips-wrap {
+  padding:10px 16px 0; background:var(--white);
+  border-top:1px solid var(--border); flex-shrink:0;
+}
+.chips { display:flex; gap:6px; overflow-x:auto; padding-bottom:10px; scrollbar-width:none; }
+.chips::-webkit-scrollbar { display:none; }
+.chip {
+  flex-shrink:0; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:20px; padding:6px 14px; font-size:0.78rem; font-weight:500;
+  color:var(--text2); cursor:pointer; transition:all 0.2s; white-space:nowrap;
+}
+.chip:active { background:var(--green-xl); border-color:var(--green-l); color:var(--green); }
+
+/* ── INPUT BAR ── */
+.input-bar {
+  background:var(--white); border-top:1px solid var(--border);
+  padding:10px 16px 14px; flex-shrink:0;
+}
+.input-row { display:flex; gap:8px; align-items:flex-end; }
+#msgInput {
+  flex:1; background:var(--surface); border:1.5px solid var(--border);
+  border-radius:14px; padding:11px 14px; font-family:'DM Sans',sans-serif;
+  font-size:0.92rem; color:var(--text); outline:none; resize:none;
+  min-height:44px; max-height:110px; transition:border-color 0.2s;
+  overflow-y:auto; line-height:1.4;
+}
+#msgInput:focus { border-color:var(--green); background:var(--white); }
+#msgInput::placeholder { color:var(--text3); }
+#sendBtn {
+  width:44px; height:44px; background:var(--green); border:none;
+  border-radius:14px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; font-size:18px; color:white; flex-shrink:0; transition:all 0.2s;
+}
+#sendBtn:active { background:#235A40; transform:scale(0.95); }
+#sendBtn:disabled { opacity:0.4; cursor:not-allowed; }
+
+/* ── REGISTRO SCREEN ── */
+#regScreen { padding:16px; padding-bottom:calc(var(--nav-h) + 16px); gap:12px; }
+.reg-header {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;
+}
+.reg-title { font-family:'DM Serif Display',serif; font-size:1.2rem; color:var(--text); }
+.btn-export {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:10px;
+  padding:7px 14px; font-family:'DM Sans',sans-serif; font-size:0.78rem;
+  font-weight:500; color:var(--text2); cursor:pointer; transition:all 0.2s;
+}
+.btn-export:active { background:var(--border); }
+
+.reg-empty {
+  text-align:center; padding:60px 20px; color:var(--text3);
+}
+.reg-empty-icon { font-size:48px; margin-bottom:12px; }
+.reg-empty-text { font-size:0.9rem; line-height:1.5; }
+
+.reg-item {
+  background:var(--white); border-radius:14px; padding:14px;
+  box-shadow:var(--shadow); animation:msgIn 0.2s ease;
+}
+.reg-item-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:8px; }
+.reg-tipos { display:flex; flex-wrap:wrap; gap:4px; }
+.reg-tipo-badge {
+  font-size:0.68rem; font-weight:600; padding:3px 8px; border-radius:6px;
+  text-transform:uppercase; letter-spacing:0.3px;
+}
+.badge-nacimiento { background:var(--green-xl); color:var(--green); }
+.badge-vacunacion { background:#F3E8FF; color:#7E22CE; }
+.badge-traspaso   { background:#FEF3C7; color:#92400E; }
+.badge-muerte     { background:var(--red-l); color:var(--red); }
+.badge-venta      { background:#FFF7ED; color:#C2410C; }
+.badge-compra     { background:#ECFEFF; color:#0E7490; }
+.badge-peso       { background:var(--blue-l); color:var(--blue); }
+.badge-tacto      { background:#F0FDF4; color:#166534; }
+.badge-sangrado   { background:#FFF1F2; color:#9F1239; }
+.badge-default    { background:var(--surface); color:var(--text2); }
+
+.reg-date { font-size:0.72rem; color:var(--text3); white-space:nowrap; }
+.reg-details { display:flex; flex-wrap:wrap; gap:6px 12px; }
+.reg-detail { font-size:0.8rem; color:var(--text2); display:flex; align-items:center; gap:3px; }
+.reg-detail strong { color:var(--text); font-weight:500; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position:fixed; bottom:0; left:0; right:0; height:var(--nav-h);
+  background:var(--white); border-top:1px solid var(--border);
+  display:flex; z-index:100; box-shadow:0 -4px 16px rgba(0,0,0,0.06);
+}
+.nav-btn {
+  flex:1; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:4px; border:none; background:none;
+  cursor:pointer; transition:all 0.2s; padding:8px;
+}
+.nav-icon { font-size:22px; transition:transform 0.2s; }
+.nav-label { font-size:0.65rem; font-weight:500; color:var(--text3); letter-spacing:0.3px; }
+.nav-btn.active .nav-label { color:var(--green); font-weight:600; }
+.nav-btn.active .nav-icon { transform:scale(1.1); }
+.nav-indicator {
+  width:4px; height:4px; border-radius:50%; background:var(--green);
+  position:absolute; bottom:10px; opacity:0; transition:opacity 0.2s;
+}
+.nav-btn.active .nav-indicator { opacity:1; }
+</style>
+</head>
+<body>
+
+<!-- API KEY MODAL -->
+<div id="keyModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-icon">&#x1F404;</div>
+    <div class="modal-title">GanaderoBot</div>
+    <div class="modal-sub">
+      Ingresa tu API Key para activar el asistente.<br>
+      Obtenerla en <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a>
+    </div>
+    <input class="modal-input" type="password" id="keyInput" placeholder="sk-ant-api03-..." />
+    <button class="modal-btn" onclick="activar()">Activar bot</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="topbar-icon">&#x1F404;</div>
+      <div>
+        <div class="topbar-name">GanaderoBot</div>
+        <div class="topbar-status"><div class="status-dot"></div> En linea</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <a class="btn-sheet" href="https://docs.google.com/spreadsheets/d/1gS2awbQ8nZ91jbDc2bOMYsMj4qANzFWoMUqPoUQ4KFc/edit" target="_blank">
+        &#x1F4CA; Planilla
+      </a>
+      <button class="btn-key" onclick="cambiarKey()" title="Cambiar API Key">&#x1F511;</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="stTotal">0</div><div class="stat-l">Hoy</div></div>
+    <div class="stat"><div class="stat-n" id="stNac">0</div><div class="stat-l">Nacim.</div></div>
+    <div class="stat"><div class="stat-n" id="stVac">0</div><div class="stat-l">Vacun.</div></div>
+    <div class="stat"><div class="stat-n" id="stVta">0</div><div class="stat-l">Ventas</div></div>
+    <div class="stat"><div class="stat-n" id="stMue">0</div><div class="stat-l">Muertes</div></div>
+  </div>
+
+  <!-- SCREENS -->
+  <div class="screens">
+
+    <!-- CHAT -->
+    <div class="screen active" id="chatScreen">
+      <div class="messages" id="msgs"></div>
+      <div class="chips-wrap">
+        <div class="chips">
+          <span class="chip" onclick="quick('Nacieron 2 terneros machos en rodeo Samuel, potrero Frente Samuel')">&#x1F42E; Nacimiento</span>
+          <span class="chip" onclick="quick('Vacune 15 animales con Aftosa en potrero Frente Samuel')">&#x1F489; Vacuna</span>
+          <span class="chip" onclick="quick('Movi 20 vacas del Frente Samuel al Fondo Samuel')">&#x1F500; Traspaso</span>
+          <span class="chip" onclick="quick('Vendi 8 novillos a 2500 el kilo rodeo Ruiz')">&#x1F4B0; Venta</span>
+          <span class="chip" onclick="quick('Murio una vaca en potrero Frente Samuel')">&#x26A0;&#xFE0F; Muerte</span>
+          <span class="chip" onclick="quick('Se hizo tacto a las vacas del rodeo Samuel')">&#x1F9EC; Tacto</span>
+          <span class="chip" onclick="quick('Pese 20 novillos promedio 380 kg rodeo Ruiz')">&#x2696;&#xFE0F; Peso</span>
+        </div>
+      </div>
+      <div class="input-bar">
+        <div class="input-row">
+          <textarea id="msgInput" placeholder="Contame que paso hoy..." rows="1"
+            oninput="autoResize(this)"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();doSend();}"></textarea>
+          <button id="sendBtn" onclick="doSend()" disabled>&#x27A4;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div class="screen" id="regScreen">
+      <div class="reg-header">
+        <div class="reg-title">Registros de hoy</div>
+        <button class="btn-export" onclick="exportCSV()">&#x21E9; CSV</button>
+      </div>
+      <div id="regList">
+        <div class="reg-empty">
+          <div class="reg-empty-icon">&#x1F4CB;</div>
+          <div class="reg-empty-text">Los registros de hoy<br>aparecen aqui</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="navChat" onclick="switchScreen('chat')">
+      <div class="nav-icon">&#x1F4AC;</div>
+      <div class="nav-label">CHAT</div>
+      <div class="nav-indicator"></div>
+    </button>
+    <button class="nav-btn" id="navReg" onclick="switchScreen('reg')">
+      <div class="nav-icon">&#x1F4CB;</div>
+      <div class="nav-label">REGISTROS</div>
+      <div class="nav-indicator"></div>
+    </button>
+  </div>
+
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+var WEBHOOK = 'https://script.google.com/macros/s/AKfycbxI5XYdstorBf9-YTfXH74l7Swpzjl3OjJaANbV7_8l1nPMsXW7QJRe6csEpHtcEW8/exec';
+var SHEET   = 'https://docs.google.com/spreadsheets/d/1gS2awbQ8nZ91jbDc2bOMYsMj4qANzFWoMUqPoUQ4KFc/edit';
+
+var POTREROS     = ['Frente Samuel','Laguna Samuel','Salida Manga Samuel','Atras Manga Samuel','Fondo Samuel','Comedero Samuel','Piquete Samuel','Frente Ruiz','Costado Ruiz','Hugo Ruiz','Centro Ruiz','Fondo Ruiz'];
+var RODEOS       = ['Samuel','Ruiz'];
+var TIPOS_ANIMAL = ['Ternero','Terneros','Ternera','Terneras','Vaca','Vacas','Toro','Toros','Novillo','Novillos','Vaquillona','Vaquillonas'];
+var SEXOS        = ['macho','hembra','mixto'];
+var TIPOS_EVENTO = ['nacimiento','vacunacion','traspaso','muerte','venta','compra','peso','tacto','sangrado'];
+
+var apiKey     = '';
+var busy       = false;
+var msgHistory = [];
+var records    = [];
+var cardCount  = 0;
+
+function sel(opts, val) {
+  var v = (val && val !== 'null') ? String(val).trim() : '';
+  var s = '<option value="">-- elegir --</option>';
+  for (var i=0; i<opts.length; i++) {
+    var match = v && opts[i].toLowerCase() === v.toLowerCase();
+    s += '<option value="'+opts[i]+'"'+(match?' selected':'')+'>'+opts[i]+'</option>';
+  }
+  return s;
+}
+var stats      = { total:0, nac:0, vac:0, vta:0, mue:0 };
+
+var SYS = 'Sos un asistente ganadero experto para establecimientos rurales de Argentina. '
+  + 'Interpretas mensajes en lenguaje natural sobre eventos del campo. '
+  + 'Cuando el usuario reporte eventos, responde con este formato exacto:\n\n'
+  + 'REGISTRO:\n'
+  + '{"tipo":"uno o varios separados por coma: nacimiento|vacunacion|traspaso|muerte|venta|compra|peso|tacto|sangrado",'
+  + '"rodeo":"Samuel|Ruiz o vacio","tipo_animal":"Ternero|Ternera|Terneros|Terneras|Vaca|Vacas|Toro|Toros|Novillo|Novillos|Vaquillona|Vaquillonas o vacio",'
+  + '"cantidad":0,"sexo":"macho|hembra|mixto o vacio","potrero":"lugar origen o vacio",'
+  + '"destino":"lugar destino si hay traslado aunque el tipo sea nacimiento - NUNCA en observaciones - o vacio",'
+  + '"vacuna":"nombre vacuna o vacio","vacunado":"true o false","peso_kg":0,"precio_kg":0,"observaciones":"SOLO info que no entra en otros campos o vacio"}\n'
+  + 'FIN_REGISTRO\n\n'
+  + 'CONFIRMACION: confirmacion breve campechana con emoji ganadero.\n\n'
+  + 'REGLAS:\n'
+  + '- PROHIBIDO usar null. Usa cadena vacia o 0\n'
+  + '- Si es UN MISMO GRUPO con nacimiento+traslado+vacunacion: UN SOLO REGISTRO\n'
+  + '- Solo separa en multiples REGISTROS si son grupos distintos en distintos potreros\n'
+  + '- ternero=macho, ternera=hembra, varios sin especificar=mixto\n'
+  + '- La fecha solo incluye dia/mes/año sin hora\n'
+  + '- Tono practico como peon de campo';
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.onload = function() {
+  var saved = localStorage.getItem('gb_key');
+  if (saved) {
+    apiKey = saved;
+    document.getElementById('keyModal').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('sendBtn').disabled = false;
+    botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado y pesos</strong>.', '');
+  }
+};
+
+function activar() {
+  var k = document.getElementById('keyInput').value.trim();
+  var clean = '';
+  for (var i = 0; i < k.length; i++) {
+    var c = k.charCodeAt(i);
+    if (c >= 32 && c <= 126) clean += k[i];
+  }
+  if (!clean) { alert('Ingresa tu API Key'); return; }
+  apiKey = clean;
+  localStorage.setItem('gb_key', clean);
+  document.getElementById('keyModal').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('sendBtn').disabled = false;
+  botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado y pesos</strong>.', '');
+}
+
+function cambiarKey() {
+  document.getElementById('keyInput').value = '';
+  document.getElementById('keyModal').style.display = 'flex';
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (name === 'chat') {
+    document.getElementById('chatScreen').classList.add('active');
+    document.getElementById('navChat').classList.add('active');
+  } else {
+    document.getElementById('regScreen').classList.add('active');
+    document.getElementById('navReg').classList.add('active');
+  }
+}
+
+// ── SEND ─────────────────────────────────────────────────────────────────────
+function quick(txt) {
+  document.getElementById('msgInput').value = txt;
+  doSend();
+}
+
+function doSend() {
+  if (busy || !apiKey) return;
+  var el   = document.getElementById('msgInput');
+  var text = el.value.trim();
+  if (!text) return;
+  el.value = ''; autoResize(el);
+  userMsg(text); showTyping();
+  busy = true;
+  document.getElementById('sendBtn').disabled = true;
+  msgHistory.push({ role:'user', content:text });
+
+  fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:SYS, messages:msgHistory })
+  })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
+  .then(function(r){
+    hideTyping();
+    if (!r.ok) {
+      botMsg('Error: ' + (r.d.error ? r.d.error.message : 'Verificar API Key'), 'err');
+    } else {
+      var txt = r.d.content.map(function(b){ return b.text||''; }).join('');
+      msgHistory.push({ role:'assistant', content:txt });
+      parseResp(txt);
+    }
+  })
+  .catch(function(e){ hideTyping(); botMsg('Error de red: '+e.message,'err'); })
+  .finally(function(){ busy=false; document.getElementById('sendBtn').disabled=false; });
+}
+
+// ── PARSE ────────────────────────────────────────────────────────────────────
+function parseResp(text) {
+  var recs = []; var re = /REGISTRO:\s*(\{[\s\S]*?\})\s*FIN_REGISTRO/g; var m;
+  while ((m = re.exec(text)) !== null) { try { recs.push(JSON.parse(m[1])); } catch(e){} }
+  var cm = text.match(/CONFIRMACION:\s*([\s\S]+)/);
+  var conf = cm ? cm[1].replace(/REGISTRO:[\s\S]*/,'').trim() : text;
+  var html = conf.replace(/\n/g,'<br>');
+  for (var i=0; i<recs.length; i++) { html += buildCard(recs[i]); updStats(recs[i].tipo); }
+  botMsg(html, recs.length>0?'ok':'');
+}
+
+// ── CARD ─────────────────────────────────────────────────────────────────────
+function buildCard(r) {
+  var id  = 'c' + (++cardCount);
+  var now = nowFull();
+  var tiposSelec = (r.tipo||'').toLowerCase().split(',').map(function(t){ return t.trim(); });
+
+  // Tipo checkboxes
+  var tiposHtml = '<div class="tipos-grid">';
+  for (var i=0; i<TIPOS_EVENTO.length; i++) {
+    var t   = TIPOS_EVENTO[i];
+    var isSelected = tiposSelec.indexOf(t) >= 0;
+    var cls = isSelected ? ' checked-'+t : '';
+    tiposHtml += '<label class="tipo-chk-label'+cls+'" onclick="toggleTipo(this,\''+t+'\')">'
+      + '<input type="checkbox" value="'+t+'"'+(isSelected?' checked':'')+' />'
+      + t + '</label>';
+  }
+  tiposHtml += '</div>';
+
+
+
+  var vacVal = (r.vacuna && r.vacuna !== 'null') ? r.vacuna : '';
+  var chk    = r.vacunado === true || r.vacunado === 'true' ? ' checked' : '';
+
+  return '<div class="rcard" id="'+id+'">'
+    + tiposHtml
+    + '<div class="field-row"><span class="field-label">Rodeo</span><select class="field-select" id="rodeo_'+id+'">'+sel(RODEOS,r.rodeo)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Animal</span><select class="field-select" id="tipoanimal_'+id+'">'+sel(TIPOS_ANIMAL,r.tipo_animal)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Sexo</span><select class="field-select" id="sexo_'+id+'">'+sel(SEXOS,r.sexo)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Potrero</span><select class="field-select" id="potr_'+id+'">'+sel(POTREROS,r.potrero)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Destino</span><select class="field-select" id="dest_'+id+'">'+sel(POTREROS,r.destino)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Cantidad</span><input class="field-input field-input-sm" id="cant_'+id+'" value="'+(clean(r.cantidad))+'" /></div>'
+    + '<div class="field-row"><span class="field-label">Vacuna</span>'
+    +   '<div class="vac-row"><input class="field-input" id="vac_'+id+'" value="'+vacVal+'" placeholder="nombre vacuna" />'
+    +   '<label class="vac-chk-wrap"><input type="checkbox" id="vacchk_'+id+'"'+chk+' /><span>&#x2713; Vacunado</span></label></div></div>'
+    + '<div class="field-row"><span class="field-label">Caravana</span><input class="field-input" id="carav_'+id+'" value="" placeholder="N&#xB0; caravana (opcional)" /></div>'
+    + '<div class="card-divider"></div>'
+    + '<div class="card-footer">'
+    +   '<div class="date-wrap"><span class="date-label">Fecha:</span><input class="date-input" id="fecha_'+id+'" value="'+now+'" /></div>'
+    +   '<button class="btn-save" id="btn_'+id+'" onclick="guardar(\''+id+'\')">Guardar &#x2192;</button>'
+    +   '<a class="btn-link" href="'+SHEET+'" target="_blank">Ver planilla &#x2197;</a>'
+    + '</div></div>';
+}
+
+function toggleTipo(label, tipo) {
+  var chk = label.querySelector('input[type=checkbox]');
+  chk.checked = !chk.checked;
+  // Update class
+  label.className = 'tipo-chk-label' + (chk.checked ? ' checked-'+tipo : '');
+}
+
+function clean(v) {
+  if (!v || v === 'null' || v === '0' || v === 0) return '';
+  return String(v).trim();
+}
+
+function guardar(id) {
+  var card   = document.getElementById(id);
+  var chks   = card.querySelectorAll('.tipo-chk-label input[type=checkbox]');
+  var tipos  = [];
+  for (var i=0; i<chks.length; i++) { if (chks[i].checked) tipos.push(chks[i].value); }
+
+  var g = function(eid) { var el = document.getElementById(eid); return el ? el.value : ''; };
+  var gc= function(eid) { var el = document.getElementById(eid); return el ? el.checked : false; };
+
+  var r = {
+    tipo:          tipos.join(', '),
+    rodeo:         g('rodeo_'+id),
+    tipo_animal:   g('tipoanimal_'+id),
+    cantidad:      g('cant_'+id),
+    sexo:          g('sexo_'+id),
+    potrero:       g('potr_'+id),
+    destino:       g('dest_'+id),
+    vacuna:        g('vac_'+id),
+    vacunado:      gc('vacchk_'+id) ? '\u2713' : '',
+    caravana:      g('carav_'+id),
+    observaciones: ''
+  };
+  var fecha = g('fecha_'+id) || nowFull();
+
+  toSheets(r, fecha);
+  addToRegList(r, fecha);
+
+  var btn = document.getElementById('btn_'+id);
+  if (btn) { btn.textContent = '\u2713 Guardado'; btn.className = 'btn-save saved'; btn.disabled = true; }
+
+  records.push({ r:r, fecha:fecha });
+}
+
+// ── REGISTRO LIST ─────────────────────────────────────────────────────────────
+function addToRegList(r, fecha) {
+  var list  = document.getElementById('regList');
+  var empty = list.querySelector('.reg-empty');
+  if (empty) empty.remove();
+
+  var tipos  = (r.tipo||'').split(',').map(function(t){ return t.trim(); });
+  var badges = tipos.map(function(t) {
+    return '<span class="reg-tipo-badge badge-'+(t||'default')+'">'+t+'</span>';
+  }).join('');
+
+  var details = [];
+  if (r.rodeo)       details.push('<span class="reg-detail">&#x1F3E1; <strong>'+r.rodeo+'</strong></span>');
+  if (r.tipo_animal) details.push('<span class="reg-detail">&#x1F42E; <strong>'+r.tipo_animal+'</strong></span>');
+  if (r.cantidad)    details.push('<span class="reg-detail">&#x23; <strong>'+r.cantidad+'</strong></span>');
+  if (r.potrero)     details.push('<span class="reg-detail">&#x1F4CD; <strong>'+r.potrero+'</strong></span>');
+  if (r.destino)     details.push('<span class="reg-detail">&#x27A1;&#xFE0F; <strong>'+r.destino+'</strong></span>');
+  if (r.vacuna)      details.push('<span class="reg-detail">&#x1F489; <strong>'+r.vacuna+'</strong></span>');
+
+  var div = document.createElement('div');
+  div.className = 'reg-item';
+  div.innerHTML = '<div class="reg-item-top">'
+    + '<div class="reg-tipos">'+badges+'</div>'
+    + '<div class="reg-date">'+fecha+'</div>'
+    + '</div>'
+    + '<div class="reg-details">'+details.join('')+'</div>';
+
+  list.insertBefore(div, list.firstChild);
+}
+
+// ── SHEETS ────────────────────────────────────────────────────────────────────
+function toSheets(r, fecha) {
+  var payload = JSON.stringify({
+    fecha:fecha, tipo:r.tipo, rodeo:r.rodeo, tipo_animal:r.tipo_animal,
+    cantidad:r.cantidad, sexo:r.sexo, potrero:r.potrero, destino:r.destino,
+    vacuna:r.vacuna, vacunado:r.vacunado, peso_kg:r.peso_kg||'',
+    precio_kg:r.precio_kg||'', observaciones:r.observaciones||'', caravana:r.caravana||''
+  });
+  fetch(WEBHOOK,{method:'POST',mode:'no-cors',body:payload}).catch(function(){});
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+function updStats(tipo) {
+  stats.total++;
+  var t = (tipo||'').toLowerCase();
+  if (t.indexOf('nacimiento')>=0) stats.nac++;
+  if (t.indexOf('vacunacion')>=0) stats.vac++;
+  if (t.indexOf('venta')>=0)      stats.vta++;
+  if (t.indexOf('muerte')>=0)     stats.mue++;
+  document.getElementById('stTotal').textContent = stats.total;
+  document.getElementById('stNac').textContent   = stats.nac;
+  document.getElementById('stVac').textContent   = stats.vac;
+  document.getElementById('stVta').textContent   = stats.vta;
+  document.getElementById('stMue').textContent   = stats.mue;
+}
+
+// ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!records.length) { alert('No hay registros para exportar.'); return; }
+  var h = ['Fecha','Tipo','Rodeo','Tipo Animal','Cantidad','Sexo','Potrero','Destino','Vacuna','Vacunado','Caravana'];
+  var rows = records.map(function(item) {
+    var r = item.r;
+    return [item.fecha,r.tipo,r.rodeo,r.tipo_animal,r.cantidad,r.sexo,r.potrero,r.destino,r.vacuna,r.vacunado,r.caravana]
+      .map(function(v){ return '"'+(String(v||'')).replace(/"/g,'""')+'"'; }).join(',');
+  });
+  var csv = '\uFEFF' + [h.join(',')].concat(rows).join('\n');
+  var a   = document.createElement('a');
+  a.href  = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'ganaderia_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ── DOM HELPERS ──────────────────────────────────────────────────────────────
+function userMsg(text) {
+  var d = document.createElement('div');
+  d.className = 'msg u';
+  d.innerHTML = '<div class="bubble">'+esc(text)+'</div><div class="mtime">'+nowT()+'</div>';
+  document.getElementById('msgs').appendChild(d); scrollB();
+}
+function botMsg(html, cls) {
+  var d = document.createElement('div');
+  d.className = 'msg b';
+  d.innerHTML = '<div class="bubble '+(cls||'')+'">'+html+'</div><div class="mtime">'+nowT()+'</div>';
+  document.getElementById('msgs').appendChild(d); scrollB();
+}
+function showTyping() {
+  var d = document.createElement('div');
+  d.className = 'typing'; d.id = 'typing';
+  d.innerHTML = '<div class="td"></div><div class="td"></div><div class="td"></div>';
+  document.getElementById('msgs').appendChild(d); scrollB();
+}
+function hideTyping() { var t=document.getElementById('typing'); if(t) t.remove(); }
+function scrollB()    { var m=document.getElementById('msgs'); m.scrollTop=m.scrollHeight; }
+function autoResize(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,110)+'px'; }
+function esc(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function nowT()   { return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
+function nowFull(){ return new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+</script>
+</body>
+</html>
