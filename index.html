@@ -456,7 +456,7 @@ var msgHistory = [];
 var records    = [];
 var cardCount  = 0;
 
-function sel(opts, val) {
+function mkOpts(opts, val) {
   var v = (val && val !== 'null') ? String(val).trim() : '';
   var s = '<option value="">-- elegir --</option>';
   for (var i=0; i<opts.length; i++) {
@@ -594,39 +594,32 @@ function buildCard(r) {
   // Tipo checkboxes
   var tiposHtml = '<div class="tipos-grid">';
   for (var i=0; i<TIPOS_EVENTO.length; i++) {
-    var t   = TIPOS_EVENTO[i];
-    var isSelected = tiposSelec.indexOf(t) >= 0;
-    var cls = isSelected ? ' checked-'+t : '';
-    tiposHtml += '<label class="tipo-chk-label'+cls+'" onclick="toggleTipo(this,\''+t+'\')">'
-      + '<input type="checkbox" value="'+t+'"'+(isSelected?' checked':'')+' />'
-      + t + '</label>';
+    var tev = TIPOS_EVENTO[i];
+    var isSel = tiposSelec.indexOf(tev) >= 0;
+    var cls   = isSel ? ' checked-'+tev : '';
+    var chkd  = isSel ? ' checked' : '';
+    tiposHtml += '<label class="tipo-chk-label'+cls+'" onclick="toggleTipo(this,\''+tev+'\')"><input type="checkbox" value="'+tev+'"'+chkd+' />'+tev+'</label>';
   }
   tiposHtml += '</div>';
 
-
-
   var vacVal = (r.vacuna && r.vacuna !== 'null') ? r.vacuna : '';
-  var chk    = r.vacunado === true || r.vacunado === 'true' ? ' checked' : '';
+  var vacChk = (r.vacunado === true || r.vacunado === 'true') ? ' checked' : '';
 
   return '<div class="rcard" id="'+id+'">'
     + tiposHtml
-    + '<div class="field-row"><span class="field-label">Rodeo</span><select class="field-select" id="rodeo_'+id+'">'+sel(RODEOS,r.rodeo)+'</select></div>'
-    + '<div class="field-row"><span class="field-label">Animal</span><select class="field-select" id="tipoanimal_'+id+'">'+sel(TIPOS_ANIMAL,r.tipo_animal)+'</select></div>'
-    + '<div class="field-row"><span class="field-label">Sexo</span><select class="field-select" id="sexo_'+id+'">'+sel(SEXOS,r.sexo)+'</select></div>'
-    + '<div class="field-row"><span class="field-label">Potrero</span><select class="field-select" id="potr_'+id+'">'+sel(POTREROS,r.potrero)+'</select></div>'
-    + '<div class="field-row"><span class="field-label">Destino</span><select class="field-select" id="dest_'+id+'">'+sel(POTREROS,r.destino)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Rodeo</span><select class="field-select" id="rodeo_'+id+'">'+mkOpts(RODEOS,r.rodeo)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Animal</span><select class="field-select" id="tipoanimal_'+id+'">'+mkOpts(TIPOS_ANIMAL,r.tipo_animal)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Sexo</span><select class="field-select" id="sexo_'+id+'">'+mkOpts(SEXOS,r.sexo)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Potrero</span><select class="field-select" id="potr_'+id+'">'+mkOpts(POTREROS,r.potrero)+'</select></div>'
+    + '<div class="field-row"><span class="field-label">Destino</span><select class="field-select" id="dest_'+id+'">'+mkOpts(POTREROS,r.destino)+'</select></div>'
     + '<div class="field-row"><span class="field-label">Cantidad</span><input class="field-input field-input-sm" id="cant_'+id+'" value="'+(clean(r.cantidad))+'" /></div>'
-    + '<div class="field-row"><span class="field-label">Vacuna</span>'
-    +   '<div class="vac-row"><input class="field-input" id="vac_'+id+'" value="'+vacVal+'" placeholder="nombre vacuna" />'
-    +   '<label class="vac-chk-wrap"><input type="checkbox" id="vacchk_'+id+'"'+chk+' /><span>&#x2713; Vacunado</span></label></div></div>'
+    + '<div class="field-row"><span class="field-label">Vacuna</span><div class="vac-row"><input class="field-input" id="vac_'+id+'" value="'+vacVal+'" placeholder="nombre vacuna" /><label class="vac-chk-wrap"><input type="checkbox" id="vacchk_'+id+'"'+vacChk+' /><span>&#x2713; Vacunado</span></label></div></div>'
     + '<div class="field-row"><span class="field-label">Caravana</span><input class="field-input" id="carav_'+id+'" value="" placeholder="N&#xB0; caravana (opcional)" /></div>'
     + '<div class="card-divider"></div>'
-    + '<div class="card-footer">'
-    +   '<div class="date-wrap"><span class="date-label">Fecha:</span><input class="date-input" id="fecha_'+id+'" value="'+now+'" /></div>'
-    +   '<button class="btn-save" id="btn_'+id+'" onclick="guardar(\''+id+'\')">Guardar &#x2192;</button>'
-    +   '<a class="btn-link" href="'+SHEET+'" target="_blank">Ver planilla &#x2197;</a>'
-    + '</div></div>';
+    + '<div class="card-footer"><div class="date-wrap"><span class="date-label">Fecha:</span><input class="date-input" id="fecha_'+id+'" value="'+now+'" /></div><button class="btn-save" id="btn_'+id+'" onclick="guardar(\''+id+'\')">Guardar &#x2192;</button><a class="btn-link" href="'+SHEET+'" target="_blank">Ver planilla &#x2197;</a></div>'
+    + '</div>';
 }
+
 
 function toggleTipo(label, tipo) {
   var chk = label.querySelector('input[type=checkbox]');
