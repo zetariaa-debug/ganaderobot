@@ -395,6 +395,7 @@ body { font-family:'DM Sans', sans-serif; color:var(--text); display:flex; flex-
           <span class="chip" onclick="quick('Murio una vaca en potrero Frente Samuel')">&#x26A0;&#xFE0F; Muerte</span>
           <span class="chip" onclick="quick('Se hizo tacto a las vacas del rodeo Samuel')">&#x1F9EC; Tacto</span>
           <span class="chip" onclick="quick('Pese 20 novillos promedio 380 kg rodeo Ruiz')">&#x2696;&#xFE0F; Peso</span>
+          <span class="chip" onclick="quick('Se caparon los terneros del rodeo Samuel')">&#x2702;&#xFE0F; Capado</span>
         </div>
       </div>
       <div class="input-bar">
@@ -448,7 +449,7 @@ var POTREROS     = ['Frente Samuel','Laguna Samuel','Salida Manga Samuel','Atras
 var RODEOS       = ['Samuel','Ruiz'];
 var TIPOS_ANIMAL = ['Ternero','Terneros','Ternera','Terneras','Vaca','Vacas','Toro','Toros','Novillo','Novillos','Vaquillona','Vaquillonas'];
 var SEXOS        = ['macho','hembra','mixto'];
-var TIPOS_EVENTO = ['nacimiento','vacunacion','traspaso','muerte','venta','compra','peso','tacto','sangrado'];
+var TIPOS_EVENTO = ['nacimiento','vacunacion','traspaso','muerte','venta','compra','peso','tacto','sangrado','capado'];
 
 var apiKey     = '';
 var busy       = false;
@@ -467,6 +468,28 @@ function mkOpts(opts, val) {
 }
 var stats      = { total:0, nac:0, vac:0, vta:0, mue:0 };
 
+var stockActual = []; // Se carga al iniciar
+
+function cargarStock() {
+  fetch(WEBHOOK)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok) {
+        stockActual = d.stock || [];
+        console.log('Stock cargado:', stockActual.length, 'grupos');
+      }
+    })
+    .catch(function(){});
+}
+
+function stockResumen() {
+  if (!stockActual.length) return 'Sin datos de stock disponibles.';
+  var lines = stockActual.map(function(s){
+    return s.rodeo+' | '+s.tipo_animal+(s.sexo?' ('+s.sexo+')':'')+' | Potrero: '+(s.potrero||'?')+' | Total: '+s.total;
+  });
+  return lines.join('\n');
+}
+
 var SYS = 'Sos un asistente ganadero experto para establecimientos rurales de Argentina. '
   + 'Interpretas mensajes en lenguaje natural sobre eventos del campo. '
   + 'Cuando el usuario reporte eventos, responde con este formato exacto:\n\n'
@@ -484,7 +507,8 @@ var SYS = 'Sos un asistente ganadero experto para establecimientos rurales de Ar
   + '- Solo separa en multiples REGISTROS si son grupos distintos en distintos potreros\n'
   + '- ternero=macho, ternera=hembra, varios sin especificar=mixto\n'
   + '- La fecha solo incluye dia/mes/año sin hora\n'
-  + '- Tono practico como peon de campo';
+  + '- Tono practico como peon de campo'
+  + '\n\nSTOCK ACTUAL (calculado de los registros):';
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 window.onload = function() {
@@ -494,7 +518,8 @@ window.onload = function() {
     document.getElementById('keyModal').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     document.getElementById('sendBtn').disabled = false;
-    botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado y pesos</strong>.', '');
+    cargarStock();
+    botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado, capado y pesos</strong>.', '');
   }
 };
 
@@ -511,7 +536,8 @@ function activar() {
   document.getElementById('keyModal').style.display = 'none';
   document.getElementById('app').style.display = 'flex';
   document.getElementById('sendBtn').disabled = false;
-  botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado y pesos</strong>.', '');
+  cargarStock();
+  botMsg('Buenas! Soy tu asistente de campo. Contame que paso en el establecimiento y yo registro todo en Google Sheets.<br><br>Puedo anotar <strong>nacimientos, vacunaciones, traspasos, ventas, compras, muertes, tacto, sangrado, capado y pesos</strong>.', '');
 }
 
 function cambiarKey() {
@@ -549,6 +575,8 @@ function doSend() {
   document.getElementById('sendBtn').disabled = true;
   msgHistory.push({ role:'user', content:text });
 
+  var sysConStock = SYS + '\n' + stockResumen();
+
   fetch('https://api.anthropic.com/v1/messages', {
     method:'POST',
     headers:{
@@ -557,7 +585,7 @@ function doSend() {
       'anthropic-version':'2023-06-01',
       'anthropic-dangerous-direct-browser-access':'true'
     },
-    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:SYS, messages:msgHistory })
+    body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system:sysConStock, messages:msgHistory })
   })
   .then(function(r){ return r.json().then(function(d){ return {ok:r.ok,d:d}; }); })
   .then(function(r){
@@ -657,8 +685,14 @@ function guardar(id) {
   };
   var fecha = g('fecha_'+id) || nowFull();
 
-  toSheets(r, fecha);
-  addToRegList(r, fecha);
+  addToRegList(r, fecha, id);
+  toSheets(r, fecha, function(fila) {
+    // Guardar numero de fila para poder borrar
+    var card = document.getElementById(id);
+    if (card) card.setAttribute('data-fila', fila);
+    var delBtn = document.getElementById('del_reg_'+id);
+    if (delBtn) delBtn.setAttribute('data-fila', fila);
+  });
 
   var btn = document.getElementById('btn_'+id);
   if (btn) { btn.textContent = '\u2713 Guardado'; btn.className = 'btn-save saved'; btn.disabled = true; }
@@ -667,7 +701,7 @@ function guardar(id) {
 }
 
 // ── REGISTRO LIST ─────────────────────────────────────────────────────────────
-function addToRegList(r, fecha) {
+function addToRegList(r, fecha, cardId) {
   var list  = document.getElementById('regList');
   var empty = list.querySelector('.reg-empty');
   if (empty) empty.remove();
@@ -680,16 +714,21 @@ function addToRegList(r, fecha) {
   var details = [];
   if (r.rodeo)       details.push('<span class="reg-detail">&#x1F3E1; <strong>'+r.rodeo+'</strong></span>');
   if (r.tipo_animal) details.push('<span class="reg-detail">&#x1F42E; <strong>'+r.tipo_animal+'</strong></span>');
-  if (r.cantidad)    details.push('<span class="reg-detail">&#x23; <strong>'+r.cantidad+'</strong></span>');
+  if (r.cantidad)    details.push('<span class="reg-detail"># <strong>'+r.cantidad+'</strong></span>');
   if (r.potrero)     details.push('<span class="reg-detail">&#x1F4CD; <strong>'+r.potrero+'</strong></span>');
-  if (r.destino)     details.push('<span class="reg-detail">&#x27A1;&#xFE0F; <strong>'+r.destino+'</strong></span>');
+  if (r.destino)     details.push('<span class="reg-detail">&#x27A1; <strong>'+r.destino+'</strong></span>');
   if (r.vacuna)      details.push('<span class="reg-detail">&#x1F489; <strong>'+r.vacuna+'</strong></span>');
 
+  var recId = 'reg_' + Date.now();
   var div = document.createElement('div');
   div.className = 'reg-item';
+  div.id = recId;
   div.innerHTML = '<div class="reg-item-top">'
     + '<div class="reg-tipos">'+badges+'</div>'
-    + '<div class="reg-date">'+fecha+'</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;">'
+    +   '<div class="reg-date">'+fecha+'</div>'
+    +   '<button id="del_reg_'+cardId+'" data-fila="" onclick="eliminarReg(\''+recId+'\',this)" style="background:var(--red-l);border:1px solid #FCA5A5;border-radius:8px;padding:3px 8px;font-size:0.72rem;color:var(--red);cursor:pointer;font-family:DM Sans,sans-serif;">&#x2715; Borrar</button>'
+    + '</div>'
     + '</div>'
     + '<div class="reg-details">'+details.join('')+'</div>';
 
@@ -697,14 +736,23 @@ function addToRegList(r, fecha) {
 }
 
 // ── SHEETS ────────────────────────────────────────────────────────────────────
-function toSheets(r, fecha) {
+function toSheets(r, fecha, callback) {
   var payload = JSON.stringify({
     fecha:fecha, tipo:r.tipo, rodeo:r.rodeo, tipo_animal:r.tipo_animal,
     cantidad:r.cantidad, sexo:r.sexo, potrero:r.potrero, destino:r.destino,
     vacuna:r.vacuna, vacunado:r.vacunado, peso_kg:r.peso_kg||'',
     precio_kg:r.precio_kg||'', observaciones:r.observaciones||'', caravana:r.caravana||''
   });
-  fetch(WEBHOOK,{method:'POST',mode:'no-cors',body:payload}).catch(function(){});
+  fetch(WEBHOOK, {method:'POST', headers:{'Content-Type':'application/json'}, body:payload})
+    .then(function(res){ return res.json(); })
+    .then(function(d){
+      if (d.ok && d.fila && callback) callback(d.fila);
+      cargarStock(); // Recargar stock despues de guardar
+    })
+    .catch(function(){
+      // Fallback no-cors si hay error CORS
+      fetch(WEBHOOK,{method:'POST',mode:'no-cors',body:payload}).catch(function(){});
+    });
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────
@@ -723,6 +771,32 @@ function updStats(tipo) {
 }
 
 // ── EXPORT CSV ────────────────────────────────────────────────────────────────
+function eliminarReg(id, btn) {
+  var fila = btn ? btn.getAttribute('data-fila') : '';
+  if (fila && confirm('Borrar este registro de la planilla tambien?')) {
+    fetch(WEBHOOK, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({accion:'borrar', fila:parseInt(fila)})
+    })
+    .then(function(){ cargarStock(); })
+    .catch(function(){});
+  }
+  var el = document.getElementById(id);
+  if (el) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateX(100%)';
+    el.style.transition = 'all 0.3s ease';
+    setTimeout(function() {
+      el.remove();
+      var list = document.getElementById('regList');
+      if (list.children.length === 0) {
+        list.innerHTML = '<div class="reg-empty"><div class="reg-empty-icon">&#x1F4CB;</div><div class="reg-empty-text">Los registros de hoy<br>aparecen aqui</div></div>';
+      }
+    }, 300);
+  }
+}
+
 function exportCSV() {
   if (!records.length) { alert('No hay registros para exportar.'); return; }
   var h = ['Fecha','Tipo','Rodeo','Tipo Animal','Cantidad','Sexo','Potrero','Destino','Vacuna','Vacunado','Caravana'];
