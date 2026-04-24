@@ -455,6 +455,16 @@ var busy       = false;
 var msgHistory = [];
 var records    = [];
 var cardCount  = 0;
+
+function sel(opts, val) {
+  var v = (val && val !== 'null') ? String(val).trim() : '';
+  var s = '<option value="">-- elegir --</option>';
+  for (var i=0; i<opts.length; i++) {
+    var match = v && opts[i].toLowerCase() === v.toLowerCase();
+    s += '<option value="'+opts[i]+'"'+(match?' selected':'')+'>'+opts[i]+'</option>';
+  }
+  return s;
+}
 var stats      = { total:0, nac:0, vac:0, vta:0, mue:0 };
 
 var SYS = 'Sos un asistente ganadero experto para establecimientos rurales de Argentina. '
@@ -585,22 +595,15 @@ function buildCard(r) {
   var tiposHtml = '<div class="tipos-grid">';
   for (var i=0; i<TIPOS_EVENTO.length; i++) {
     var t   = TIPOS_EVENTO[i];
-    var sel = tiposSelec.indexOf(t) >= 0;
-    var cls = sel ? ' checked-'+t : '';
+    var isSelected = tiposSelec.indexOf(t) >= 0;
+    var cls = isSelected ? ' checked-'+t : '';
     tiposHtml += '<label class="tipo-chk-label'+cls+'" onclick="toggleTipo(this,\''+t+'\')">'
-      + '<input type="checkbox" value="'+t+'"'+(sel?' checked':'')+' />'
+      + '<input type="checkbox" value="'+t+'"'+(isSelected?' checked':'')+' />'
       + t + '</label>';
   }
   tiposHtml += '</div>';
 
-  function sel(opts, val) {
-    var v = (val && val !== 'null') ? val : '';
-    var s = '<option value="">-- elegir --</option>';
-    for (var i=0; i<opts.length; i++) {
-      s += '<option value="'+opts[i]+'"'+(opts[i].toLowerCase()===v.toLowerCase()?' selected':'')+'>'+opts[i]+'</option>';
-    }
-    return s;
-  }
+
 
   var vacVal = (r.vacuna && r.vacuna !== 'null') ? r.vacuna : '';
   var chk    = r.vacunado === true || r.vacunado === 'true' ? ' checked' : '';
