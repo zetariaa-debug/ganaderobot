@@ -300,7 +300,7 @@ function doSend(){
   var el=document.getElementById('msgInput');var text=el.value.trim();if(!text)return;
   el.value='';autoResize(el);userMsg(text);showTyping();busy=true;document.getElementById('sendBtn').disabled=true;
   msgHistory.push({role:'user',content:text});
-  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS+stockResumen(),messages:msgHistory})})
+  fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYS+'\n'+stockResumen(),messages:msgHistory})})
   .then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});})
   .then(function(r){
     hideTyping();
