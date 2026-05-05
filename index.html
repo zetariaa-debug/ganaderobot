@@ -504,7 +504,7 @@ var SYS = 'Sos un asistente ganadero experto para establecimientos rurales de Ar
   + '"rodeo":"Samuel|Ruiz o vacio","tipo_animal":"Ternero|Ternera|Terneros|Terneras|Vaca|Vacas|Toro|Toros|Novillo|Novillos|Vaquillona|Vaquillonas o vacio",'
   + '"cantidad":0,"sexo":"macho|hembra|mixto o vacio","potrero":"lugar origen o vacio",'
   + '"destino":"lugar destino si hay traslado aunque el tipo sea nacimiento - NUNCA en observaciones - o vacio",'
-  + '"vacuna":"nombre vacuna o vacio","vacunado":"true o false","peso_kg":0,"precio_kg":0,"observaciones":"SOLO info que no entra en otros campos o vacio"}\n'
+  + '"vacuna":"nombre vacuna o vacio","vacunado":"true o false","peso_kg":0,"precio_kg":0,"observaciones":"enfermedades, estado del animal, condicion corporal, tratamientos, cualquier info adicional que no encaje en otros campos o vacio"}\n'
   + 'FIN_REGISTRO\n\n'
   + 'CONFIRMACION: confirmacion breve campechana con emoji ganadero.\n\n'
   + 'REGLAS:\n'
@@ -649,6 +649,7 @@ function buildCard(r) {
     + '<div class="field-row"><span class="field-label">Cantidad</span><input class="field-input field-input-sm" id="cant_'+id+'" value="'+(clean(r.cantidad))+'" /></div>'
     + '<div class="field-row"><span class="field-label">Vacuna</span><div class="vac-row"><input class="field-input" id="vac_'+id+'" value="'+vacVal+'" placeholder="nombre vacuna" /><label class="vac-chk-wrap"><input type="checkbox" id="vacchk_'+id+'"'+vacChk+' /><span>&#x2713; Vacunado</span></label></div></div>'
     + '<div class="field-row"><span class="field-label">Caravana</span><input class="field-input" id="carav_'+id+'" value="" placeholder="N&#xB0; caravana (opcional)" /></div>'
+    + '<div class="field-row" style="align-items:flex-start;"><span class="field-label" style="padding-top:8px;">Obs.</span><textarea class="field-input" id="obs_'+id+'" placeholder="Enfermedad, estado del animal, datos adicionales..." style="min-height:60px;resize:vertical;line-height:1.4;">'+cleanObs(r.observaciones)+'</textarea></div>'
     + '<div class="card-divider"></div>'
     + '<div class="card-footer"><div class="date-wrap"><span class="date-label">Fecha:</span><input class="date-input" id="fecha_'+id+'" value="'+now+'" /></div><button class="btn-save" id="btn_'+id+'" onclick="guardar(\''+id+'\')">Guardar &#x2192;</button><a class="btn-link" href="'+SHEET+'" target="_blank">Ver planilla &#x2197;</a></div>'
     + '</div>';
@@ -664,6 +665,11 @@ function toggleTipo(label, tipo) {
 
 function clean(v) {
   if (!v || v === 'null' || v === '0' || v === 0) return '';
+  return String(v).trim();
+}
+
+function cleanObs(v) {
+  if (!v || v === 'null') return '';
   return String(v).trim();
 }
 
@@ -687,7 +693,7 @@ function guardar(id) {
     vacuna:        g('vac_'+id),
     vacunado:      gc('vacchk_'+id) ? '\u2713' : '',
     caravana:      g('carav_'+id),
-    observaciones: ''
+    observaciones: g('obs_'+id)
   };
   var fecha = g('fecha_'+id) || nowFull();
 
@@ -724,6 +730,7 @@ function addToRegList(r, fecha, cardId) {
   if (r.potrero)     details.push('<span class="reg-detail">&#x1F4CD; <strong>'+r.potrero+'</strong></span>');
   if (r.destino)     details.push('<span class="reg-detail">&#x27A1; <strong>'+r.destino+'</strong></span>');
   if (r.vacuna)      details.push('<span class="reg-detail">&#x1F489; <strong>'+r.vacuna+'</strong></span>');
+  if (r.observaciones) details.push('<span class="reg-detail" style="color:var(--amber);">&#x1F4DD; '+r.observaciones+'</span>');
 
   var recId = 'reg_' + Date.now();
   var div = document.createElement('div');
