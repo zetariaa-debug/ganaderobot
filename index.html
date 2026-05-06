@@ -344,97 +344,64 @@ function buildCard(r){
   var now=nowFull();
   var ts=(r.tipo||'').toLowerCase().split(',').map(function(t){return t.trim();});
 
-  var el=document.createElement('div');
-  el.className='rcard';
-  el.id=id;
-
   // Tipos checkboxes
-  var tGrid=document.createElement('div');
-  tGrid.className='tipos-grid';
+  var tHtml='<div class="tipos-grid">';
   for(var i=0;i<TIPOS_EVENTO.length;i++){
     var tev=TIPOS_EVENTO[i];
     var isSel=ts.indexOf(tev)>=0;
-    var lbl=document.createElement('label');
-    lbl.className='tipo-chk-label'+(isSel?' checked-'+tev:'');
-    lbl.setAttribute('data-tipo',tev);
-    lbl.onclick=function(){toggleTipo(this,this.getAttribute('data-tipo'));};
-    var chk=document.createElement('input');
-    chk.type='checkbox';chk.value=tev;if(isSel)chk.checked=true;
-    lbl.appendChild(chk);
-    lbl.appendChild(document.createTextNode(tev));
-    tGrid.appendChild(lbl);
+    var cls=isSel?' checked-'+tev:'';
+    var chkd=isSel?' checked':'';
+    tHtml+='<label class="tipo-chk-label'+cls+'" onclick="toggleTipo(this,&quot;'+tev+'&quot;)">'
+      +'<input type="checkbox" value="'+tev+'"'+chkd+' />'+tev+'</label>';
   }
-  el.appendChild(tGrid);
+  tHtml+='</div>';
 
-  function mkRow(labelTxt,inputEl){
-    var row=document.createElement('div');row.className='field-row';
-    var lbl=document.createElement('span');lbl.className='field-label';lbl.textContent=labelTxt;
-    row.appendChild(lbl);row.appendChild(inputEl);return row;
+  function mkSel(fid,opts,val){
+    var v=(val&&val!=='null')?String(val).trim():'';
+    var s='<select class="field-select" id="'+fid+'"><option value="">-- elegir --</option>';
+    for(var i=0;i<opts.length;i++){
+      s+='<option value="'+opts[i]+'"'+(opts[i].toLowerCase()===v.toLowerCase()?' selected':'')+'>'+opts[i]+'</option>';
+    }
+    return s+'</select>';
   }
-  function mkSel(id2,opts,val){
-    var s=document.createElement('select');s.className='field-select';s.id=id2;
-    s.innerHTML=mkOpts(opts,val);return s;
+  function mkRow(lbl,inp){
+    return '<div class="field-row"><span class="field-label">'+lbl+'</span>'+inp+'</div>';
   }
-  function mkInp(id2,val,ph,cls){
-    var inp=document.createElement('input');inp.className='field-input '+(cls||'');
-    inp.id=id2;inp.value=cv(val);if(ph)inp.placeholder=ph;return inp;
-  }
+  function cv2(v){if(!v||v==='null'||v==='0'||v===0)return '';return String(v).trim();}
 
-  el.appendChild(mkRow('Rodeo',mkSel('rodeo_'+id,RODEOS,r.rodeo)));
-  el.appendChild(mkRow('Animal',mkSel('tipoanimal_'+id,TIPOS_ANIMAL,r.tipo_animal)));
-  el.appendChild(mkRow('Sexo',mkSel('sexo_'+id,SEXOS,r.sexo)));
-  el.appendChild(mkRow('Potrero',mkSel('potr_'+id,POTREROS,r.potrero)));
-  el.appendChild(mkRow('Destino',mkSel('dest_'+id,POTREROS,r.destino)));
-  el.appendChild(mkRow('Cantidad',mkInp('cant_'+id,r.cantidad,'','field-input-sm')));
+  var vacVal=cv2(r.vacuna);
+  var vacChk=(r.vacunado===true||r.vacunado==='true')?' checked':'';
+  var obsVal=cv2(r.observaciones);
 
-  // Vacuna row
-  var vacRow=document.createElement('div');vacRow.className='field-row';
-  var vacLbl=document.createElement('span');vacLbl.className='field-label';vacLbl.textContent='Vacuna';
-  var vacWrap=document.createElement('div');vacWrap.className='vac-row';
-  var vacInp=document.createElement('input');vacInp.className='field-input';vacInp.id='vac_'+id;vacInp.value=cv(r.vacuna);vacInp.placeholder='nombre vacuna';
-  var vacChkLbl=document.createElement('label');vacChkLbl.className='vac-chk-wrap';
-  var vacChk=document.createElement('input');vacChk.type='checkbox';vacChk.id='vacchk_'+id;
-  if(r.vacunado===true||r.vacunado==='true')vacChk.checked=true;
-  var vacChkSpan=document.createElement('span');vacChkSpan.textContent='Vacunado';
-  vacChkLbl.appendChild(vacChk);vacChkLbl.appendChild(vacChkSpan);
-  vacWrap.appendChild(vacInp);vacWrap.appendChild(vacChkLbl);
-  vacRow.appendChild(vacLbl);vacRow.appendChild(vacWrap);
-  el.appendChild(vacRow);
+  var cardHtml='<div class="rcard" id="'+id+'">'
+    +tHtml
+    +mkRow('Rodeo',mkSel('rodeo_'+id,RODEOS,r.rodeo))
+    +mkRow('Animal',mkSel('tipoanimal_'+id,TIPOS_ANIMAL,r.tipo_animal))
+    +mkRow('Sexo',mkSel('sexo_'+id,SEXOS,r.sexo))
+    +mkRow('Potrero',mkSel('potr_'+id,POTREROS,r.potrero))
+    +mkRow('Destino',mkSel('dest_'+id,POTREROS,r.destino))
+    +mkRow('Cantidad','<input class="field-input field-input-sm" id="cant_'+id+'" value="'+cv2(r.cantidad)+'" />')
+    +'<div class="field-row"><span class="field-label">Vacuna</span>'
+    +'<div class="vac-row">'
+    +'<input class="field-input" id="vac_'+id+'" value="'+vacVal+'" placeholder="nombre vacuna" />'
+    +'<label class="vac-chk-wrap"><input type="checkbox" id="vacchk_'+id+'"'+vacChk+' /><span>Vacunado</span></label>'
+    +'</div></div>'
+    +'<div class="field-row" style="align-items:flex-start">'
+    +'<span class="field-label" style="padding-top:8px">Obs.</span>'
+    +'<textarea class="field-input" id="obs_'+id+'" placeholder="Estado del animal, enfermedades..." style="min-height:60px;resize:vertical;line-height:1.4">'+obsVal+'</textarea>'
+    +'</div>'
+    +mkRow('Caravana','<input class="field-input" id="carav_'+id+'" value="" placeholder="N caravana (opcional)" />')
+    +'<div class="card-divider"></div>'
+    +'<div class="card-footer">'
+    +'<div class="date-wrap"><span class="date-label">Fecha:</span>'
+    +'<input class="date-input" id="fecha_'+id+'" value="'+now+'" /></div>'
+    +'<button class="btn-save" id="btn_'+id+'" onclick="guardar(&quot;'+id+'&quot;)">Guardar</button>'
+    +'<a class="btn-link" href="'+SHEET+'" target="_blank">Ver planilla</a>'
+    +'</div></div>';
 
-  // Observaciones
-  var obsRow=document.createElement('div');obsRow.className='field-row';obsRow.style.alignItems='flex-start';
-  var obsLbl=document.createElement('span');obsLbl.className='field-label';obsLbl.style.paddingTop='8px';obsLbl.textContent='Obs.';
-  var obsTxt=document.createElement('textarea');obsTxt.className='field-input';obsTxt.id='obs_'+id;
-  obsTxt.placeholder='Estado del animal, enfermedades, datos adicionales...';
-  obsTxt.style.minHeight='60px';obsTxt.style.resize='vertical';obsTxt.style.lineHeight='1.4';
-  obsTxt.textContent=cv(r.observaciones);
-  obsRow.appendChild(obsLbl);obsRow.appendChild(obsTxt);
-  el.appendChild(obsRow);
-
-  // Caravana
-  el.appendChild(mkRow('Caravana',mkInp('carav_'+id,'','N caravana (opcional)','')));
-
-  // Divider
-  var div=document.createElement('div');div.className='card-divider';el.appendChild(div);
-
-  // Footer
-  var footer=document.createElement('div');footer.className='card-footer';
-  var dateWrap=document.createElement('div');dateWrap.className='date-wrap';
-  var dateLbl=document.createElement('span');dateLbl.className='date-label';dateLbl.textContent='Fecha:';
-  var dateInp=document.createElement('input');dateInp.className='date-input';dateInp.id='fecha_'+id;dateInp.value=now;
-  dateWrap.appendChild(dateLbl);dateWrap.appendChild(dateInp);
-
-  var saveBtn=document.createElement('button');saveBtn.className='btn-save';saveBtn.id='btn_'+id;
-  saveBtn.textContent='Guardar';
-  saveBtn.onclick=(function(cid){return function(){guardar(cid);};})(id);
-
-  var viewLink=document.createElement('a');viewLink.className='btn-link';viewLink.href=SHEET;viewLink.target='_blank';viewLink.textContent='Ver planilla';
-
-  footer.appendChild(dateWrap);footer.appendChild(saveBtn);footer.appendChild(viewLink);
-  el.appendChild(footer);
-
-  return el.outerHTML;
+  return cardHtml;
 }
+
 
 function toggleTipo(label,tipo){
   var chk=label.querySelector('input[type=checkbox]');
