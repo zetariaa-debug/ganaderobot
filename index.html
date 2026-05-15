@@ -234,8 +234,20 @@ window.addEventListener('load',function(){
   var CHIPS=[['Nacimiento','Nacieron 2 terneros en rodeo Samuel potrero Frente Samuel'],['Vacuna','Vacune 15 animales con Aftosa en potrero Frente Samuel'],['Traspaso','Movi las vacas del Frente Samuel al Fondo Samuel'],['Venta','Vendi 8 novillos a 2500 el kilo rodeo Ruiz'],['Muerte','Murio una vaca en potrero Frente Samuel'],['Tacto','Se hizo tacto a las vacas del rodeo Samuel'],['Capado','Se caparon los terneros del rodeo Samuel'],['Peso','Pese 20 novillos promedio 380 kg rodeo Ruiz']];
   var cr=document.getElementById('chipsRow');
   CHIPS.forEach(function(ch){var btn=document.createElement('span');btn.className='chip';btn.textContent=ch[0];btn.addEventListener('click',function(){document.getElementById('msgInput').value=ch[1];doSend();});cr.appendChild(btn);});
-  var sysBase='Sos asistente ganadero experto para Argentina. Interpreta mensajes del campo. Responde con este formato exacto: REGISTRO: {"tipo":"uno o varios por coma: nacimiento|vacunacion|traspaso|muerte|venta|compra|peso|tacto|sangrado|capado","rodeo":"Samuel o Ruiz o vacio","tipo_animal":"OBLIGATORIO usar siempre uno de: Ternero|Ternera|Terneros|Terneras|Vaca|Vacas|Toro|Toros|Novillo|Novillos|Vaquillona|Vaquillonas","cantidad":0,"sexo":"macho|hembra|mixto o vacio","potrero":"origen o vacio","destino":"destino traslado o vacio","vacuna":"nombre o vacio","vacunado":"true o false","peso_kg":0,"precio_kg":0,"observaciones":"datos extra"} FIN_REGISTRO CONFIRMACION: frase breve. SINONIMOS OBLIGATORIOS: madres=Vacas, madre=Vaca, vaquillonas=Vaquillonas, toros=Toros, terneros=Terneros, terneras=Terneras, novillos=Novillos, vacas=Vacas. REGLAS: 1) tipo_animal es OBLIGATORIO, NUNCA lo dejes vacio. 2) No uses null. 3) ternero=macho, ternera=hembra. 4) SEPARAR POR TIPO ANIMAL: si menciona distintos tipos de animal (ej terneras Y vacas Y madres), genera UN REGISTRO SEPARADO por cada tipo. 3 terneras y 2 vacas = 2 REGISTROS. 5) Mismo tipo animal con multiples eventos = UN SOLO REGISTRO. 6) Si dice todos sin cantidad busca en STOCK ACTUAL. STOCK ACTUAL: ';
-  SYS=sysBase;
+  var sysBase='Sos asistente ganadero experto. STOCK DISPONIBLE (formato rodeo/tipo_animal/potrero:cantidad): ';
+  SYS=sysBase+stockStr()+' --- INSTRUCCIONES: '+
+  'Cuando el usuario reporte eventos DE CAMPO responde con REGISTRO:{...}FIN_REGISTRO. '+
+  'Cuando el usuario haga PREGUNTAS sobre stock/cantidades, responde directamente con los numeros del stock disponible arriba SIN generar REGISTRO. '+
+  'FORMATO REGISTRO: {"tipo":"nacimiento|vacunacion|traspaso|muerte|venta|compra|peso|tacto|sangrado|capado (uno o varios por coma)","rodeo":"Samuel o Ruiz","tipo_animal":"OBLIGATORIO: Ternero|Ternera|Terneros|Terneras|Vaca|Vacas|Toro|Toros|Novillo|Novillos|Vaquillona|Vaquillonas","cantidad":0,"sexo":"macho|hembra|mixto","potrero":"potrero ORIGEN (de donde salen o donde estan)","destino":"potrero DESTINO (adonde van - OBLIGATORIO en traspasos)","vacuna":"nombre o vacio","vacunado":"true o false","observaciones":"solo datos medicos o sanitarios, NUNCA info de traslado"} '+
+  'REGLAS CRITICAS: '+
+  '1) tipo_animal SIEMPRE obligatorio. Sinonimos: madres/madre=Vacas, terneros=Terneros, terneras=Terneras, novillos=Novillos. '+
+  '2) En TRASPASOS: potrero=origen, destino=destino. NUNCA en observaciones. '+
+  '3) SEPARAR por tipo animal: 3 terneras + 2 vacas = 2 REGISTROS separados. '+
+  '4) Todo el rodeo = un REGISTRO por cada tipo de animal que aparece en el stock. '+
+  '5) Si dice todos sin cantidad, usa el numero exacto del stock. '+
+  '6) No uses null. ternero=macho, ternera=hembra. '+
+  'CONFIRMACION: frase breve campechana despues de cada registro.'
+  ;
 });
 })();
 
