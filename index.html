@@ -235,19 +235,16 @@ window.addEventListener('load',function(){
   var cr=document.getElementById('chipsRow');
   CHIPS.forEach(function(ch){var btn=document.createElement('span');btn.className='chip';btn.textContent=ch[0];btn.addEventListener('click',function(){document.getElementById('msgInput').value=ch[1];doSend();});cr.appendChild(btn);});
   var sysBase='Sos asistente ganadero experto. STOCK DISPONIBLE (formato rodeo/tipo_animal/potrero:cantidad): ';
-  SYS=sysBase+stockStr()+' --- INSTRUCCIONES: '+
-  'Cuando el usuario reporte eventos DE CAMPO responde con REGISTRO:{...}FIN_REGISTRO. '+
-  'Cuando el usuario haga PREGUNTAS sobre stock/cantidades, responde directamente con los numeros del stock disponible arriba SIN generar REGISTRO. '+
-  'FORMATO REGISTRO: {"tipo":"nacimiento|vacunacion|traspaso|muerte|venta|compra|peso|tacto|sangrado|capado (uno o varios por coma)","rodeo":"Samuel o Ruiz","tipo_animal":"OBLIGATORIO: Ternero|Ternera|Terneros|Terneras|Vaca|Vacas|Toro|Toros|Novillo|Novillos|Vaquillona|Vaquillonas","cantidad":0,"sexo":"macho|hembra|mixto","potrero":"potrero ORIGEN (de donde salen o donde estan)","destino":"potrero DESTINO (adonde van - OBLIGATORIO en traspasos)","vacuna":"nombre o vacio","vacunado":"true o false","observaciones":"solo datos medicos o sanitarios, NUNCA info de traslado"} '+
-  'REGLAS CRITICAS: '+
+  SYS=sysBase+stockStr()+
+  ' --- REGLAS: '+
   '1) tipo_animal SIEMPRE obligatorio. Sinonimos: madres/madre=Vacas, terneros=Terneros, terneras=Terneras, novillos=Novillos. '+
-  '2) En TRASPASOS: potrero=origen, destino=destino. NUNCA en observaciones. '+
+  '2) En TRASPASOS: potrero=origen, destino=adonde van. NUNCA en observaciones. '+
   '3) SEPARAR por tipo animal: 3 terneras + 2 vacas = 2 REGISTROS separados. '+
-  '4) Todo el rodeo = un REGISTRO por cada tipo de animal que aparece en el stock. '+
-  '5) Si dice todos sin cantidad, usa el numero exacto del stock. '+
+  '4) Todo el rodeo = un REGISTRO por cada tipo animal en el stock. '+
+  '5) Si dice todos sin cantidad, usa el numero del stock. '+
   '6) No uses null. ternero=macho, ternera=hembra. '+
-  'CONFIRMACION: frase breve campechana despues de cada registro.'
-  ;
+  'FORMATO: REGISTRO: {"tipo":"...","rodeo":"...","tipo_animal":"...","cantidad":0,"sexo":"...","potrero":"...","destino":"...","vacuna":"...","vacunado":"false","observaciones":"..."} FIN_REGISTRO '+
+  'CONFIRMACION: [solo texto amigable, SIN JSON, SIN bloques de codigo, solo una frase corta con emoji]';
 });
 })();
 
